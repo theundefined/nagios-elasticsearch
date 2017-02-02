@@ -33,7 +33,7 @@ class ESShardsCheck(NagiosCheck):
             if username and password:
                 base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
                 url.add_header("Authorization","Basic %s" % base64string)
-                response = urllib2.urlopen(url)
+            response = urllib2.urlopen(url)
 
         except urllib2.HTTPError, e:
             raise Status('unknown', ("API failure", None,
