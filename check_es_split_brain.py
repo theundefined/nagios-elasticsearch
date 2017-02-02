@@ -3,6 +3,7 @@ from nagioscheck import NagiosCheck, UsageError
 from nagioscheck import PerformanceMetric, Status
 import urllib2
 import optparse
+import base64
 
 try:
     import json
@@ -18,19 +19,27 @@ class ESSplitBrainCheck(NagiosCheck):
 
         self.add_option('N', 'nodes', 'nodes', 'Cluster nodes')
         self.add_option('P', 'port', 'port', 'The ES port - defaults to 9200')
+        self.add_option('u', 'username', 'username', 'username to login into ES port')
+        self.add_option('p', 'password', 'password', 'password to login into ES port')
 
     def check(self, opts, args):
         nodes = opts.nodes.split(",")
         port = int(opts.port or '9200')
+        username = opts.username
+        password = opts.password
+
         masters = []
         responding_nodes = []
         failed_nodes = []
 
         for node in nodes:
             try:
-                response = urllib2.urlopen(
-                        r'http://%s:%d/_cluster/state/nodes,master_node/'
-                        % (node, port))
+                url=urllib2.Request(r'http://%s:%d/_cluster/state/nodes,master_node/' % (node, port))
+                if username and password:
+                   base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+                   url.add_header("Authorization","Basic %s" % base64string)
+                response = urllib2.urlopen(url)
+
                 response_body = response.read()
                 response = json.loads(response_body)
             except (urllib2.HTTPError, urllib2.URLError), e:
