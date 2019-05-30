@@ -10,7 +10,6 @@ try:
 except ImportError:
     import simplejson as json
 
-
 class ESJVMHealthCheck(NagiosCheck):
 
     def __init__(self):
@@ -45,7 +44,7 @@ class ESJVMHealthCheck(NagiosCheck):
 
         except urllib2.HTTPError, e:
             raise Status('unknown', ("API failure", None,
-                                     "API failure:\n\n%s" % str(e)))
+                                     "API failure: %s" % str(e)))
         except urllib2.URLError, e:
             raise Status('critical', (e.reason))
 
@@ -60,6 +59,7 @@ class ESJVMHealthCheck(NagiosCheck):
         critical_details = []
         warnings = 0
         warning_details = []
+        details=[]
 
         nodes = nodes_jvm_data['nodes']
         for node in nodes:
@@ -74,27 +74,35 @@ class ESJVMHealthCheck(NagiosCheck):
                 warnings = warnings + 1
                 warning_details.append("%s currently running at %s%% JVM mem "
                                        % (node_name, jvm_percentage))
+            else:
+                details.append("%s have %s%% JVM mem " % (node_name,jvm_percentage))
 
         if criticals > 0:
             raise Status("Critical",
                          "There are '%s' node(s) in the cluster that have "
                          "breached the %% JVM heap usage critical threshold "
-                         "of %s%%. They are:\r\n%s"
+                         "of %s%%. They are: %s. OK are: %s "
                          % (
                              criticals,
                              critical,
-                             str("\r\n".join(critical_details))
+                             str(" ".join(critical_details)),
+                             str(" " .join(details))
                              ))
         elif warnings > 0:
             raise Status("Warning",
                          "There are '%s' node(s) in the cluster that have "
                          "breached the %% JVM mem usage warning threshold of "
-                         "%s%%. They are:\r\n%s"
+                         "%s%%. They are: %s OK are: %s"
                          % (warnings, warning,
-                            str("\r\n".join(warning_details))))
+                            str(" ".join(warning_details)),
+                            str(" ".join(details))
+                           ))
         else:
             raise Status("OK", "All nodes in the cluster are currently below "
-                         "the % JVM mem warning threshold")
+                         "the %% JVM mem warning threshold. OK are: %s"
+                         % (
+                            str(" ".join(details))
+                           ))
 
 if __name__ == "__main__":
     ESJVMHealthCheck().run()

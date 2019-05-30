@@ -50,7 +50,7 @@ class ESShardsCheck(NagiosCheck):
 
         unassigned_shards = es_cluster_health['unassigned_shards']
 
-        if es_cluster_health['unassigned_shards'] != unassigned_shards:
+        if unassigned_shards != 0:
             raise Status('CRITICAL',
                          "There are '%s' unassigned shards in the cluster"
                          % (unassigned_shards))
